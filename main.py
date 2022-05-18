@@ -92,7 +92,7 @@ def main():
   """
     Number (sector) that indicates the sector that starts the FAT 2
   """
-  root_dir_sector = fat_2_sector + table_size16
+  root_dir_sector = (root_entry_count * 32) / bytes_per_sector
   """
     Number (sector) that indicates the sector that starts the Root Dir
   """
@@ -105,7 +105,7 @@ def main():
   """
     Address to FAT 2
   """
-  root_dir_address = (root_dir_sector * bytes_per_sector * sectors_per_cluster)
+  root_dir_address = (reserved_sectors + table_size16 * table_count) * bytes_per_sector
   """
     Address to Root Dir
   """
