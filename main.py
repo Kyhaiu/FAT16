@@ -1,3 +1,4 @@
+import math
 import sys
 import argparse
 from typing import List
@@ -76,7 +77,7 @@ def main():
     ---
     The total sectors in the logical volume. If this value is 0, it means there are more than 65535 sectors in the volume, and the actual count is stored in the Large Sector Count entry at 0x20.
   """
-  table_size16 = int(str('0x' + file_hex[22]), 16)
+  sectors_per_fat = int(str('0x' + file_hex[22]), 16)
   """
     ### Offset(decimal) = 22
     ---
@@ -88,7 +89,8 @@ def main():
   """
     Number (sector) that indicates the sector that starts the FAT 1
   """
-  fat_2_sector = fat_1_sector + table_size16
+  fat_2_sector = (fat_1_sector + sectors_per_fat)
+  print(fat_1_sector, fat_2_sector, sectors_per_fat)
   """
     Number (sector) that indicates the sector that starts the FAT 2
   """
@@ -105,7 +107,7 @@ def main():
   """
     Address to FAT 2
   """
-  root_dir_address = (reserved_sectors + table_size16 * table_count) * bytes_per_sector
+  root_dir_address = (reserved_sectors + sectors_per_fat * table_count) * bytes_per_sector
   """
     Address to Root Dir
   """
@@ -175,7 +177,7 @@ def main():
   print(f'{"Bytes per sector:":<25} {bytes_per_sector:>5}')
   print(f'{"Sectors per cluster:":<25} {sectors_per_cluster:>5}')
   print(f'{"FAT tables:":<25} {table_count:>5}')
-  print(f'{"FAT table size:":<25} {table_size16:>5}')
+  print(f'{"FAT table size:":<25} {sectors_per_fat:>5}')
   print(f'{"Root directory entries:":<25} {root_entry_count:>5}')
   print(f'{"Total sectors:":<25} {total_sectors_32}')
 
@@ -184,10 +186,10 @@ def main():
   print('Boot Record at: 0x0')
 
   for i in range(0, table_count):
-    temp = reserved_sectors + (i * table_size16)
+    temp = reserved_sectors + (i * sectors_per_fat)
     print(f'FAT {i+1} at: 0x{temp * bytes_per_sector:0>8x}, sector {temp}')
 
-  root_sec = reserved_sectors + (table_count * table_size16)
+  root_sec = reserved_sectors + (table_count * sectors_per_fat)
   root_addr =  root_sec * bytes_per_sector
   print(f'Root directory at: 0x{root_addr:0>8x}, sector {root_sec}')
 
@@ -204,48 +206,24 @@ def main():
     fc:int = e['low bits']
     attr:str = e['type']
     addr:int = ((fc - 2) * sectors_per_cluster + data_sec) * bytes_per_sector
-    size_formated:int = f"{e['size']} Bytes" if attr == '0x20' else ''
-    name_formated:str = f'{name.replace(" ", "")}.{ext.replace(" ", "")}' if e['type'] == '0x20' else f'{name.replace(" ", "")}/'
-    out = f'[{attr}] {name_formated: <12} at FAT[{fc:4}] (0x{addr:0>8x}) {size_formated}'
+    size_formatted:int = f"{e['size']} Bytes" if attr == '0x20' else ''
+    name_formatted:str = f'{name.replace(" ", "")}.{ext.replace(" ", "")}' if e['type'] == '0x20' else f'{name.replace(" ", "")}/'
+    out = f'[{attr}] {name_formatted: <12} at FAT[{fc:4}] (0x{addr:0>8x}) {size_formatted}'
     print(out)
 
-  # print('===============SETORES===============')
+  print('\nContents of a file\n')
 
-  # print('Setor que começa a FAT 1: {}'.format(fat_1_sector))
-  # print('Setor que começa a FAT 2: {}'.format(fat_2_sector))
-  # print('Setor que começa o Root Dir: {}'.format(root_dir_sector))
-  # print('\n')
+  for e in root_entries:
+    if e['type'] == '0x20':
+      name = e['name']
+      ext = e['extension']
+      name_formatted = f'{name.replace(" ","")}.{ext.replace(" ","")}' if e['type'] == '0x20' else f'{name.replace(" ","")}/'
+      print(name,'\n')
+      size = e['size']
+      # first cluster
+      fc = e['low bits']
+      total_cluster_file = math.ceil(size / bytes_per_sector)
 
-  # print('===============ENDEREÇOS===============')
-
-  # print('Endereço FAT 1: {}'.format(fat_1_address))
-  # print('Endereço FAT 2: {}'.format(fat_2_address))
-  # print('Endereço Root Dir: {}'.format(root_dir_address))
-  # print('\n')
-
-  # print('===============DIRETORIOS===============')
-
-  # for i in directories:
-  #   print('Nome do diretório: {}'.format(i['nome']))
-  #   print('Endereço: {}'.format(i['indice']))
-  #   print('Extensão do diretório: {}'.format(i['extensão']))
-  #   print('Tamanho do diretório: {}'.format(i['tamanho']))
-  #   print('Endereço do primeiro cluster: {}'.format(i['primeiro cluster']))
-  #   print('--------------------------------------------------')
-  
-  # print('\n')
-
-  # print('===============ARQUIVOS===============')
-
-  # for i in filenames:
-  #   print('Nome do arquivo: {}'.format(i['nome']))
-  #   print('Endereço: {}'.format(i['indice']))
-  #   print('Extensão do arquivo: {}'.format(i['extensão']))
-  #   print('Tamanho do aqruivo: {}'.format(i['tamanho']))
-  #   print('Endereço do primeiro cluster: {}'.format(i['primeiro cluster']))
-  #   print('--------------------------------------------------')
-  
-  # print('\n')
 
 if __name__ == '__main__':
   main()
