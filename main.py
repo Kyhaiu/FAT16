@@ -90,15 +90,13 @@ def main():
     Number (sector) that indicates the sector that starts the FAT 1
   """
   fat_2_sector = (fat_1_sector + sectors_per_fat)
-  print(fat_1_sector, fat_2_sector, sectors_per_fat)
   """
     Number (sector) that indicates the sector that starts the FAT 2
   """
-  root_dir_sector = (root_entry_count * 32) / bytes_per_sector
+  size_root_dir = ((root_entry_count * 32) + (bytes_per_sector - 1)) // bytes_per_sector
   """
-    Number (sector) that indicates the sector that starts the Root Dir
+   The size (sectors) of root dir
   """
-
   fat_1_address = (fat_1_sector * bytes_per_sector * sectors_per_cluster)
   """
     Address to FAT 1
@@ -191,11 +189,23 @@ def main():
     print(f'FAT {i+1} at: 0x{temp * bytes_per_sector:0>8x}, sector {temp}')
 
   root_sec = reserved_sectors + (table_count * sectors_per_fat)
+  """
+    Number (sector) that indicates the sector that starts Root Dir
+  """
   root_addr =  root_sec * bytes_per_sector
+  """
+    Offset that indicates the start of root dir address
+  """
   print(f'Root directory at: 0x{root_addr:0>8x}, sector {root_sec}')
 
   data_sec = root_sec + ((root_entry_count * 32) // bytes_per_sector)
+  """
+    Number (sector) that indicates the sector that starts Root Dir
+  """
   data_addr = data_sec * bytes_per_sector
+  """
+    Offset that indicates the start of data sector address
+  """
   print(f'Data at: 0x{data_addr:0>8x}, sector {data_sec}')
 
   print("\nRoot Directory\n")
@@ -224,6 +234,8 @@ def main():
       # first cluster
       fc = e['low bits']
       total_cluster_file = math.ceil(size / bytes_per_sector)
+      
+      # file_sector = (((fc - 2) * sectors_per_cluster) + data_sector) * bytes_per_sector
 
 
 if __name__ == '__main__':
