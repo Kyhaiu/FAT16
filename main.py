@@ -149,6 +149,7 @@ def main():
 
       # Obtém os bytes hexadecimal do tamanho
       length_hex = file_hex[i+28: i+32]
+      length_hex.reverse()
       aux = ''
       # Concatena os bytes hexadecimais em uma única string
       for j in length_hex:
